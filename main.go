@@ -32,43 +32,69 @@ func main() {
 		action = os.Args[1]
 		action = strings.ReplaceAll(action, "-", "")
 	} else {
-		if fileExists("ansible.cfg") {
-			action = "ansible"
-		}
-
-		if fileExists("dockerfile") {
-			action = "docker"
-		}
-
-		if fileExists("go.mod") {
-			action = "go"
-		}
-
-		if fileExists(".goreleaser.yml") || fileExists(".goreleaser.yaml") {
-			action = "goreleaser"
-		}
-
-		if fileExists("build.sh") && runtime.GOOS != "windows" {
-			action = "sh"
-		}
-
-		if fileExists("build.bat") && runtime.GOOS == "windows" {
-			action = "bat"
-		}
-
-		if fileExists("build.cmd") && runtime.GOOS == "windows" {
-			action = "cmd"
-		}
-
-		if fileExists("build.ps1") {
-			action = "powershell"
-		}
-
-		if fileExists("build.cake") {
-			action = "cake"
-		}
+		action = autoDetect()
 	}
 
+	err := preformAction(action)
+
+	if err != nil {
+		fmt.Println(fmt.Errorf(color.RedString(err.Error())))
+		os.Exit(1)
+	}
+}
+
+func autoDetect() string {
+	action := ""
+
+	if fileExists("ansible.cfg") {
+		action = "ansible"
+	}
+
+	if fileExists("dockerfile") {
+		action = "docker"
+	}
+
+	if fileExists("go.mod") {
+		action = "go"
+	}
+
+	if fileExists(".goreleaser.yml") || fileExists(".goreleaser.yaml") {
+		action = "goreleaser"
+	}
+
+	if fileExists("build.sh") && runtime.GOOS != "windows" {
+		action = "sh"
+	}
+
+	if fileExists("build.bat") && runtime.GOOS == "windows" {
+		action = "bat"
+	}
+
+	if fileExists("build.cmd") && runtime.GOOS == "windows" {
+		action = "cmd"
+	}
+
+	if fileExists("build.ps1") {
+		action = "powershell"
+	}
+
+	if fileExists("build.cake") {
+		action = "cake"
+	}
+
+	return action
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return !info.IsDir()
+}
+
+func preformAction(action string) error {
 	switch action {
 	case "archive":
 		archive()
@@ -91,19 +117,12 @@ func main() {
 	case "docker":
 		buildDocker()
 	case "":
+		return fmt.Errorf("%s", color.RedString("nothing found to build in this directory"))
 	default:
-		fmt.Println(color.RedString("Nothing found to build!"))
-		os.Exit(1)
-	}
-}
-
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
+		return fmt.Errorf("%s", color.RedString("unknown build system specified"))
 	}
 
-	return !info.IsDir()
+	return nil
 }
 
 func run(binary string, params []string) error {
