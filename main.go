@@ -1,10 +1,24 @@
+/*
+Copyright © 2024 Julian Easterling <julian@julianscorner.com>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package main
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -58,129 +72,29 @@ func main() {
 	switch action {
 	case "archive":
 		archive()
-		os.Exit(0)
 	case "cake":
 		buildCake()
-		os.Exit(0)
 	case "powershell":
 		buildPowershell()
-		os.Exit(0)
 	case "bat":
 		buildDos(true)
-		os.Exit(0)
 	case "cmd":
 		buildDos(false)
-		os.Exit(0)
 	case "sh":
 		buildBash()
-		os.Exit(0)
 	case "goreleaser":
 		buildGoReleaser()
-		os.Exit(0)
 	case "go":
 		buildGo()
-		os.Exit(0)
 	case "ansible":
 		buildAnsible()
-		os.Exit(0)
 	case "docker":
 		buildDocker()
-		os.Exit(0)
 	case "":
 	default:
 		fmt.Println(color.RedString("Nothing found to build!"))
 		os.Exit(1)
 	}
-}
-
-func archive() {
-	pwd, _ := os.Getwd()
-	name := filepath.Base(pwd)
-
-	dst := fmt.Sprintf("../%s.7z", name)
-
-	fmt.Printf("Archiving '%s'...\n", pwd)
-
-	run("7z", []string{"a", "-t7z", "-mx9", "-y", "-r", dst, "."})
-}
-
-func buildAnsible() {
-	run("ansible-lint", []string{"."})
-}
-
-func buildBash() {
-	run("bash", []string{"build.sh"})
-}
-
-func buildCake() {
-	cmd := exec.Command("dotnet", "tool", "list")
-	tools, err := cmd.CombinedOutput()
-
-	if err != nil {
-		fmt.Println(color.RedString("dotnet SDK is not present!s"))
-		os.Exit(2)
-	}
-
-	if !strings.Contains(string(tools), "cake.tool") {
-		if !fileExists(".config/dotnet-tools.json") {
-			cmd := exec.Command("dotnet", "new", "tool-manifest")
-			_, err := cmd.CombinedOutput()
-
-			if err != nil {
-				fmt.Println(color.RedString("Installing Cake.Tool: %s", err))
-				os.Exit(3)
-			}
-
-			err = run("dotnet", []string{"tool", "install", "Cake.Tool"})
-
-			if err != nil {
-				fmt.Println(color.RedString("Cake.Tool is not present and could not be installed!"))
-				os.Exit(4)
-			}
-		}
-	}
-
-	var params []string
-
-	if len(os.Args) > 0 {
-		if os.Args[0] == "cake" {
-			if !strings.Contains("-", os.Args[1]) {
-				params = []string{"--target=" + os.Args[1]}
-			} else {
-				params = os.Args[1:]
-			}
-		} else {
-			params = os.Args
-		}
-	}
-
-	params = append([]string{"cake"}, params...)
-	run("dotnet", params)
-}
-
-func buildDocker() {
-	run("docker", []string{"build", "."})
-}
-
-func buildDos(batchFile bool) {
-	if batchFile {
-		run("cmd.exe", []string{"/C", "build.bat"})
-	} else {
-		run("cmd.exe", []string{"/C", "build.cmd"})
-	}
-}
-
-func buildGoReleaser() {
-	run("goreleaser", []string{"release", "--snapshot", "--clean"})
-}
-
-func buildGo() {
-	run("go", []string{"mod", "tidy"})
-	run("go", []string{"build", "-a", "."})
-}
-
-func buildPowershell() {
-	run("pwsh", []string{"-f", "build.ps1"})
 }
 
 func fileExists(filename string) bool {
