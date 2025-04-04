@@ -24,13 +24,12 @@ import (
 	"github.com/fatih/color"
 )
 
-func buildCake() {
+func buildCake() error {
 	cmd := exec.Command("dotnet", "tool", "list")
 	tools, err := cmd.CombinedOutput()
 
 	if err != nil {
-		fmt.Println(color.RedString("dotnet SDK is not present!s"))
-		os.Exit(2)
+		return fmt.Errorf("%s", color.RedString("dotnet SDK is not present!s"))
 	}
 
 	if !strings.Contains(string(tools), "cake.tool") {
@@ -39,15 +38,13 @@ func buildCake() {
 			_, err := cmd.CombinedOutput()
 
 			if err != nil {
-				fmt.Println(color.RedString("Installing Cake.Tool: %s", err))
-				os.Exit(3)
+				return fmt.Errorf("%s", color.RedString("Installing Cake.Tool: %s", err))
 			}
 
 			err = run("dotnet", []string{"tool", "install", "Cake.Tool"})
 
 			if err != nil {
-				fmt.Println(color.RedString("Cake.Tool is not present and could not be installed!"))
-				os.Exit(4)
+				return fmt.Errorf("%s", color.RedString("Cake.Tool is not present and could not be installed!"))
 			}
 		}
 	}
@@ -67,5 +64,5 @@ func buildCake() {
 	}
 
 	params = append([]string{"cake"}, params...)
-	run("dotnet", params)
+	return run("dotnet", params)
 }

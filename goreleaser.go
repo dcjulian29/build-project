@@ -15,6 +15,12 @@ limitations under the License.
 */
 package main
 
-func buildGoReleaser() {
-	run("goreleaser", []string{"release", "--snapshot", "--clean"})
+import "fmt"
+
+func buildGoReleaser() error {
+	if fileExists(".goreleaser.yml") || fileExists(".goreleaser.yaml") {
+		return run("goreleaser", []string{"release", "--snapshot", "--clean"})
+	} else {
+		return fmt.Errorf("%s", ".goreleaser.yml file does not exists")
+	}
 }

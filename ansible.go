@@ -15,6 +15,12 @@ limitations under the License.
 */
 package main
 
-func buildAnsible() {
-	run("ansible-lint", []string{"."})
+import "fmt"
+
+func buildAnsible() error {
+	if fileExists("ansible.cfg") {
+		return run("ansible-lint", []string{"."})
+	} else {
+		return fmt.Errorf("%s", "ansible.cfg file does not exists")
+	}
 }

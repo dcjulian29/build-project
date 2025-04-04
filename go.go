@@ -15,7 +15,21 @@ limitations under the License.
 */
 package main
 
-func buildGo() {
-	run("go", []string{"mod", "tidy"})
-	run("go", []string{"build", "-a", "."})
+import "fmt"
+
+func buildGo() error {
+	if fileExists("go.mod") {
+
+		var err error = nil
+
+		err = run("go", []string{"mod", "tidy"})
+
+		if err != nil {
+			return err
+		}
+
+		return run("go", []string{"build", "-a", "."})
+	} else {
+		return fmt.Errorf("%s", "go.mod file does not exists")
+	}
 }

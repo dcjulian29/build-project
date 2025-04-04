@@ -15,6 +15,12 @@ limitations under the License.
 */
 package main
 
-func buildDocker() {
-	run("docker", []string{"build", "."})
+import "fmt"
+
+func buildDocker() error {
+	if fileExists("dockerfile") {
+		return run("docker", []string{"build", "."})
+	} else {
+		return fmt.Errorf("%s", "dockerfile file does not exist")
+	}
 }

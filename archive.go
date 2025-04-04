@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 )
 
-func archive() {
+func archive() error {
 	pwd, _ := os.Getwd()
 	name := filepath.Base(pwd)
 
@@ -29,5 +29,5 @@ func archive() {
 
 	fmt.Printf("Archiving '%s'...\n", pwd)
 
-	run("7z", []string{"a", "-t7z", "-mx9", "-y", "-r", dst, "."})
+	return run("7z", []string{"a", "-t7z", "-mx9", "-y", "-r", dst, "."})
 }
