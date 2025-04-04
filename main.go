@@ -102,7 +102,8 @@ func autoDetect() string {
 }
 
 func determineTerminal() {
-	cmd := exec.Command("echo $SHELL", "")
+	line := "echo $SHELL"
+	cmd := exec.Command(line, "")
 	cmd.Stdin = os.Stdin
 	out, _ := cmd.CombinedOutput()
 
@@ -113,7 +114,8 @@ func determineTerminal() {
 			isBash = true
 		}
 	} else {
-		cmd := exec.Command("(dir 2>&1 *`|echo CMD);&<# rem #>echo ($PSVersionTable).PSEdition", "")
+		line := "(dir 2>&1 *`|echo CMD);&<# rem #>echo ($PSVersionTable).PSEdition"
+		cmd := exec.Command(line, "")
 		cmd.Stdin = os.Stdin
 		out, _ := cmd.CombinedOutput()
 
