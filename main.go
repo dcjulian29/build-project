@@ -19,13 +19,21 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
 )
 
+var (
+	isBash       bool
+	isCore       bool
+	isDos        bool
+	isPowershell bool
+)
+
 func main() {
+	determineTerminal()
+
 	action := ""
 
 	if len(os.Args) > 1 {
@@ -38,7 +46,7 @@ func main() {
 	err := preformAction(action)
 
 	if err != nil {
-		fmt.Println(fmt.Errorf(color.RedString(err.Error())))
+		fmt.Println(fmt.Errorf("error: %s", color.RedString(err.Error())))
 		os.Exit(1)
 	}
 }
@@ -62,27 +70,67 @@ func autoDetect() string {
 		action = "goreleaser"
 	}
 
-	if fileExists("build.sh") && runtime.GOOS != "windows" {
-		action = "sh"
-	}
-
-	if fileExists("build.bat") && runtime.GOOS == "windows" {
-		action = "bat"
-	}
-
-	if fileExists("build.cmd") && runtime.GOOS == "windows" {
-		action = "cmd"
-	}
-
-	if fileExists("build.ps1") {
-		action = "powershell"
-	}
-
 	if fileExists("build.cake") {
 		action = "cake"
 	}
 
+	if fileExists("build.sh") {
+		if isBash {
+			action = "sh"
+		}
+	}
+
+	if fileExists("build.bat") {
+		if isDos {
+			action = "bat"
+		}
+	}
+
+	if fileExists("build.cmd") {
+		if isDos {
+			action = "cmd"
+		}
+	}
+
+	if fileExists("build.ps1") {
+		if isPowershell {
+			action = "powershell"
+		}
+	}
+
 	return action
+}
+
+func determineTerminal() {
+	cmd := exec.Command("echo $SHELL", "")
+	cmd.Stdin = os.Stdin
+	out, _ := cmd.CombinedOutput()
+
+	terminal := string(out)
+
+	if len(terminal) > 0 || terminal != "$SHELL" {
+		if strings.Contains(terminal, "bash") {
+			isBash = true
+		}
+	} else {
+		cmd := exec.Command("(dir 2>&1 *`|echo CMD);&<# rem #>echo ($PSVersionTable).PSEdition", "")
+		cmd.Stdin = os.Stdin
+		out, _ := cmd.CombinedOutput()
+
+		terminal := string(out)
+
+		switch terminal {
+		case "CMD":
+			isDos = true
+
+		case "Core":
+			isCore = true
+			isPowershell = true
+
+		case "Desktop":
+			isPowershell = true
+		}
+	}
 }
 
 func fileExists(filename string) bool {
@@ -95,19 +143,22 @@ func fileExists(filename string) bool {
 }
 
 func preformAction(action string) error {
+
+	var err error = nil
+
 	switch action {
 	case "archive":
 		archive()
 	case "cake":
 		buildCake()
 	case "powershell":
-		buildPowershell()
+		err = buildPowershell()
 	case "bat":
-		buildDos(true)
+		err = buildDos(true)
 	case "cmd":
-		buildDos(false)
+		err = buildDos(false)
 	case "sh":
-		buildBash()
+		err = buildBash()
 	case "goreleaser":
 		buildGoReleaser()
 	case "go":
@@ -120,6 +171,10 @@ func preformAction(action string) error {
 		return fmt.Errorf("%s", color.RedString("nothing found to build in this directory"))
 	default:
 		return fmt.Errorf("%s", color.RedString("unknown build system specified"))
+	}
+
+	if err != nil {
+		return fmt.Errorf("%s", color.RedString(err.Error()))
 	}
 
 	return nil

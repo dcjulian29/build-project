@@ -15,6 +15,19 @@ limitations under the License.
 */
 package main
 
-func buildBash() {
-	run("bash", []string{"build.sh"})
+import (
+	"fmt"
+	"runtime"
+)
+
+func buildBash() error {
+	if runtime.GOOS != "windows" {
+		if fileExists("build.sh") {
+			return run("bash", []string{"build.sh"})
+		} else {
+			return fmt.Errorf("%s", "build.sh file does not exists")
+		}
+	} else {
+		return fmt.Errorf("%s", "this type of build system requires Windows")
+	}
 }

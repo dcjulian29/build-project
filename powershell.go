@@ -15,6 +15,23 @@ limitations under the License.
 */
 package main
 
-func buildPowershell() {
-	run("pwsh", []string{"-f", "build.ps1"})
+import (
+	"fmt"
+	"runtime"
+)
+
+func buildPowershell() error {
+	if fileExists("build.ps1") {
+		if isCore {
+			return run("pwsh", []string{"-f", "build.ps1"})
+		} else {
+			if runtime.GOOS == "windows" {
+				return run("powershell", []string{"-f", "build.ps1"})
+			} else {
+				return fmt.Errorf("%s", "this type of build system requires Windows")
+			}
+		}
+	} else {
+		return fmt.Errorf("%s", "build.ps1 file does not exists")
+	}
 }

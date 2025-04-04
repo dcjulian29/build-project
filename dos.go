@@ -15,10 +15,27 @@ limitations under the License.
 */
 package main
 
-func buildDos(batchFile bool) {
-	if batchFile {
-		run("cmd.exe", []string{"/C", "build.bat"})
+import (
+	"fmt"
+	"runtime"
+)
+
+func buildDos(batchFile bool) error {
+	if runtime.GOOS == "windows" {
+		if batchFile {
+			if fileExists("build.bat") {
+				return run("cmd.exe", []string{"/C", "build.bat"})
+			} else {
+				return fmt.Errorf("%s", "build.bat file does not exists")
+			}
+		} else {
+			if fileExists("build.cmd") {
+				return run("cmd.exe", []string{"/C", "build.cmd"})
+			} else {
+				return fmt.Errorf("%s", "build.cmd file does not exists")
+			}
+		}
 	} else {
-		run("cmd.exe", []string{"/C", "build.cmd"})
+		return fmt.Errorf("%s", "this type of build system requires Windows")
 	}
 }
