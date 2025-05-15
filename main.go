@@ -78,17 +78,17 @@ func autoDetect() string {
 		if isBash {
 			action = "sh"
 		}
-	}
-
-	if fileExists("build.bat") {
-		if isDos {
-			action = "bat"
+	} else {
+		if fileExists("build.bat") {
+			if isDos || isPowershell {
+				action = "bat"
+			}
 		}
-	}
 
-	if fileExists("build.cmd") {
-		if isDos {
-			action = "cmd"
+		if fileExists("build.cmd") {
+			if isDos || isPowershell {
+				action = "cmd"
+			}
 		}
 	}
 
