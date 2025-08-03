@@ -28,6 +28,6 @@ func buildBash() error {
 			return fmt.Errorf("%s", "build.sh file does not exists")
 		}
 	} else {
-		return fmt.Errorf("%s", "this type of build system requires Windows")
+		return fmt.Errorf("%s", "this type of build system requires Linux")
 	}
 }
