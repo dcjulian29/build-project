@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
@@ -74,11 +75,13 @@ func autoDetect() string {
 		action = "cake"
 	}
 
-	if fileExists("build.sh") {
+	if fileExists("build.sh") && runtime.GOOS != "windows" {
 		if isBash {
 			action = "sh"
 		}
-	} else {
+	}
+
+	if runtime.GOOS == "windows" {
 		if fileExists("build.bat") {
 			if isDos || isPowershell {
 				action = "bat"
