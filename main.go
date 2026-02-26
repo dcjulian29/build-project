@@ -16,135 +16,109 @@ limitations under the License.
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/fatih/color"
-)
-
-var (
-	isBash       bool
-	isCore       bool
-	isDos        bool
-	isPowershell bool
+	"github.com/dcjulian29/go-toolbox/color"
+	"github.com/dcjulian29/go-toolbox/execute"
+	"github.com/dcjulian29/go-toolbox/io"
 )
 
 func main() {
-	determineTerminal()
-
 	action := ""
 
 	if len(os.Args) > 1 {
-		action = os.Args[1]
-		action = strings.ReplaceAll(action, "-", "")
+		if strings.HasPrefix(os.Args[1], "-") {
+			action = os.Args[1]
+			action = strings.ReplaceAll(action, "-", "")
+		} else {
+			action = autoDetectAction()
+		}
 	} else {
-		action = autoDetect()
+		action = autoDetectAction()
 	}
 
-	err := preformAction(action)
-
-	if err != nil {
-		fmt.Println(fmt.Errorf("error: %s", color.RedString(err.Error())))
+	if err := preformAction(action); err != nil {
+		fmt.Println(color.Red(err.Error()))
 		os.Exit(1)
 	}
 }
 
-func autoDetect() string {
+func autoDetectAction() string {
+	fmt.Println(color.Info("Detecting build system..."))
+
 	action := ""
 
-	if fileExists("ansible.cfg") {
+	if io.FileExists("ansible.cfg") {
 		action = "ansible"
 	}
 
-	if fileExists("dockerfile") {
+	if io.FileExists("dockerfile") {
 		action = "docker"
 	}
 
-	if fileExists("go.mod") {
+	if io.FileExists("go.mod") {
 		action = "go"
 	}
 
-	if fileExists(".goreleaser.yml") || fileExists(".goreleaser.yaml") {
+	if io.FileExists(".goreleaser.yml") || io.FileExists(".goreleaser.yaml") {
 		action = "goreleaser"
 	}
 
-	if fileExists("build.cake") {
+	if io.FileExists("build.cake") {
 		action = "cake"
 	}
 
-	if fileExists("build.sh") && runtime.GOOS != "windows" {
-		if isBash {
-			action = "sh"
-		}
-	}
-
+	// Check for platform-specific build scripts
 	if runtime.GOOS == "windows" {
-		if fileExists("build.bat") {
-			if isDos || isPowershell {
-				action = "bat"
-			}
+		if io.FileExists("build.bat") && isShellAvailable("cmd") {
+			action = "bat"
 		}
 
-		if fileExists("build.cmd") {
-			if isDos || isPowershell {
-				action = "cmd"
-			}
+		if io.FileExists("build.cmd") && isShellAvailable("cmd") {
+			action = "cmd"
 		}
-	}
 
-	if fileExists("build.ps1") {
-		if isPowershell {
+		if io.FileExists("build.ps1") && isShellAvailable("powershell") {
 			action = "powershell"
 		}
+	} else {
+		if io.FileExists("build.sh") && isShellAvailable("sh") {
+			action = "sh"
+		}
+
+		if io.FileExists("build.sh") && isShellAvailable("bash") {
+			action = "bash"
+		}
+	}
+
+	if io.FileExists("build.ps1") && isShellAvailable("pwsh") {
+		action = "pwsh"
 	}
 
 	return action
 }
 
-func determineTerminal() {
-	line := "echo $SHELL"
-	cmd := exec.Command(line, "")
-	cmd.Stdin = os.Stdin
-	out, _ := cmd.CombinedOutput()
+func isShellAvailable(shell string) bool {
+	var cmd *exec.Cmd
 
-	terminal := string(out)
-
-	if len(terminal) > 0 || terminal != "$SHELL" {
-		if strings.Contains(terminal, "bash") {
-			isBash = true
-		}
-	} else {
-		line := "(dir 2>&1 *`|echo CMD);&<# rem #>echo ($PSVersionTable).PSEdition"
-		cmd := exec.Command(line, "")
-		cmd.Stdin = os.Stdin
-		out, _ := cmd.CombinedOutput()
-
-		terminal := string(out)
-
-		switch terminal {
-		case "CMD":
-			isDos = true
-
-		case "Core":
-			isCore = true
-			isPowershell = true
-
-		case "Desktop":
-			isPowershell = true
-		}
-	}
-}
-
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
+	switch shell {
+	case "bash", "sh", "pwsh":
+		cmd = exec.Command(shell, "-c", "exit 0")
+	case "cmd":
+		cmd = exec.Command(shell, "/C", "exit 0")
+	case "powershell":
+		cmd = exec.Command(shell, "-Command", "exit 0")
+	default:
 		return false
 	}
 
-	return !info.IsDir()
+	return cmd.Run() == nil
 }
 
 func preformAction(action string) error {
@@ -152,44 +126,156 @@ func preformAction(action string) error {
 	var err error = nil
 
 	switch action {
-	case "archive":
-		archive()
-	case "cake":
-		buildCake()
-	case "powershell":
-		err = buildPowershell()
-	case "bat":
-		err = buildDos(true)
-	case "cmd":
-		err = buildDos(false)
-	case "sh":
-		err = buildBash()
-	case "goreleaser":
-		buildGoReleaser()
-	case "go":
-		buildGo()
 	case "ansible":
-		buildAnsible()
+		if io.FileExists("ansible.cfg") {
+			err = execute.ExternalProgram("ansible-lint", ".")
+		} else {
+			err = errors.New("ansible.cfg file does not exists")
+		}
+	case "archive":
+		pwd, _ := os.Getwd()
+		name := filepath.Base(pwd)
+
+		dst := fmt.Sprintf("../%s.7z", name)
+
+		fmt.Printf("Archiving '%s'...\n", pwd)
+
+		err = execute.ExternalProgram("7z", "a", "-t7z", "-mx9", "-y", "-r", dst, ".")
+	case "bash":
+		if runtime.GOOS != "windows" {
+			if io.FileExists("build.sh") {
+				err = execute.ExternalProgram("bash", "build.sh")
+			} else {
+				err = errors.New("build.sh file does not exists")
+			}
+		} else {
+			err = errors.New("this type of build system requires Linux or MacOS")
+		}
+	case "bat":
+		if runtime.GOOS == "windows" {
+			if io.FileExists("build.bat") {
+				err = execute.ExternalProgram("cmd.exe", "/C", "build.bat")
+			} else {
+				err = errors.New("build.bat file does not exists")
+			}
+		} else {
+			err = errors.New("this type of build system requires Windows")
+		}
+	case "cake":
+		tools, err := execute.ExternalProgramCapture("dotnet", "tool", "list")
+		if err != nil {
+			err = errors.New("dotnet SDK is not present")
+		}
+
+		if !strings.Contains(tools, "cake.tool") {
+			if !io.FileExists("dotnet-tools.json") {
+				err = execute.ExternalProgram("dotnet", "new", "tool-manifest")
+			}
+
+			if err == nil {
+				fmt.Println(color.Info("Installing Cake.Tool"))
+				err = execute.ExternalProgram("dotnet", "tool", "install", "Cake.Tool")
+
+				if err != nil {
+					err = errors.New("Cake.Tool is not present and could not be installed")
+				}
+			}
+		}
+
+		arguments := []string{"cake"}
+
+		if len(os.Args) > 1 {
+			if os.Args[1] == "cake" {
+				arguments = append(arguments, "--target="+os.Args[2])
+			} else {
+				arguments = append(arguments, "--target="+os.Args[1])
+			}
+
+			msg := fmt.Sprintf("Using target '%s'", strings.Split(arguments[len(arguments)-1], "=")[1])
+			fmt.Println(color.Info(msg))
+		}
+
+		err = execute.ExternalProgram("dotnet", arguments...)
+
+		if err != nil && strings.Contains(err.Error(), "Could not execute because the specified command or file was not found") {
+			err = execute.ExternalProgram("dotnet", "tool", "restore")
+			if err != nil {
+				err = errors.New("Cake.Tool is not present and could not be restored")
+			} else {
+				err = execute.ExternalProgram("dotnet", arguments...)
+			}
+		}
+	case "cmd":
+		if runtime.GOOS == "windows" {
+			if io.FileExists("build.cmd") {
+				err = execute.ExternalProgram("cmd.exe", "/C", "build.cmd")
+			} else {
+				err = errors.New("build.cmd file does not exists")
+			}
+		} else {
+			err = errors.New("this type of build system requires Windows")
+		}
 	case "docker":
-		buildDocker()
+		if io.FileExists("dockerfile") {
+			err = execute.ExternalProgram("docker", "build", ".")
+		} else {
+			err = errors.New("dockerfile file does not exist")
+		}
+	case "go":
+		if io.FileExists("go.mod") {
+			err = execute.ExternalProgram("go", "mod", "tidy")
+
+			if err == nil {
+				err = execute.ExternalProgram("go", "vet")
+			}
+
+			if err == nil {
+				err = execute.ExternalProgram("go", "build", "-a", ".")
+			}
+		} else {
+			err = errors.New("go.mod file does not exists")
+		}
+	case "goreleaser":
+		if io.FileExists(".goreleaser.yml") || io.FileExists(".goreleaser.yaml") {
+			err = execute.ExternalProgram("goreleaser", "release", "--snapshot", "--clean")
+		} else {
+			err = errors.New(".goreleaser.yml file does not exists")
+		}
+	case "powershell":
+		if io.FileExists("build.ps1") {
+			if runtime.GOOS == "windows" {
+				err = execute.ExternalProgram("powershell", "-f", "build.ps1")
+			} else {
+				err = errors.New("this type of build system requires Windows")
+			}
+		} else {
+			err = errors.New("build.ps1 file does not exists")
+		}
+	case "pwsh":
+		if io.FileExists("build.ps1") {
+			err = execute.ExternalProgram("pwsh", "-f", "build.ps1")
+		} else {
+			err = errors.New("build.ps1 file does not exists")
+		}
+	case "sh":
+		if runtime.GOOS != "windows" {
+			if io.FileExists("build.sh") {
+				err = execute.ExternalProgram("sh", "build.sh")
+			} else {
+				err = errors.New("build.sh file does not exists")
+			}
+		} else {
+			err = errors.New("this type of build system requires Linux or MacOS")
+		}
 	case "":
-		return fmt.Errorf("%s", color.RedString("nothing found to build in this directory"))
+		err = errors.New("nothing found to build in this directory")
 	default:
-		return fmt.Errorf("%s", color.RedString("unknown build system specified"))
+		err = errors.New("unknown build system specified")
 	}
 
 	if err != nil {
-		return fmt.Errorf("%s", color.RedString(err.Error()))
+		return errors.New(color.Fatal(err.Error()))
 	}
 
 	return nil
-}
-
-func run(binary string, params []string) error {
-	cmd := exec.Command(binary, params...)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-
-	return cmd.Run()
 }
