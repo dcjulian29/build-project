@@ -30,7 +30,7 @@ import (
 )
 
 func main() {
-	action := ""
+	var action string
 
 	if len(os.Args) > 1 {
 		if strings.HasPrefix(os.Args[1], "-") {
@@ -52,7 +52,7 @@ func main() {
 func autoDetectAction() string {
 	fmt.Println(color.Info("Detecting build system..."))
 
-	action := ""
+	var action string
 
 	if io.FileExists("ansible.cfg") {
 		action = "ansible"
@@ -74,8 +74,12 @@ func autoDetectAction() string {
 		action = "cake"
 	}
 
-	// Check for platform-specific build scripts
-	if runtime.GOOS == "windows" {
+	return autoDetectBuildScript(action)
+}
+
+func autoDetectBuildScript(action string) string {
+	switch runtime.GOOS {
+	case "windows":
 		if io.FileExists("build.bat") && isShellAvailable("cmd") {
 			action = "bat"
 		}
@@ -87,7 +91,7 @@ func autoDetectAction() string {
 		if io.FileExists("build.ps1") && isShellAvailable("powershell") {
 			action = "powershell"
 		}
-	} else {
+	case "linux", "darwin":
 		if io.FileExists("build.sh") && isShellAvailable("sh") {
 			action = "sh"
 		}
