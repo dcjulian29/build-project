@@ -234,7 +234,7 @@ func preformAction(action string) error {
 			}
 
 			if err == nil {
-				err = execute.ExternalProgram("go", "build", "-a", ".")
+				err = execute.ExternalProgram("go", "build", "-a", "-v", ".")
 			}
 		} else {
 			err = errors.New("go.mod file does not exists")
