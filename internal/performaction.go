@@ -39,6 +39,7 @@ import (
 //     or restoring it if necessary
 //   - "cmd"        – executes build.cmd using cmd.exe (Windows only)
 //   - "docker"     – runs "docker build ." (requires a dockerfile)
+//   - "dotnet"     - runs dotnet build to compile
 //   - "go"         – runs go mod tidy, go vet, and go build (requires go.mod)
 //   - "goreleaser" – runs goreleaser release --snapshot --clean
 //   - "powershell" – executes build.ps1 using Windows PowerShell (Windows only)
@@ -146,6 +147,31 @@ func PerformAction(action string) error {
 			err = execute.ExternalProgram("docker", "build", ".")
 		} else {
 			err = errors.New("dockerfile file does not exist")
+		}
+	case "dotnet":
+		if !IsShellAvailable("dotnet") {
+			return errors.New("dotnet CLI is not available; install the .NET SDK from https://dot.net")
+		}
+
+		s, _ := filepath.Glob("*.sln")
+		c, _ := filepath.Glob("*.csproj")
+		f, _ := filepath.Glob("*.fsproj")
+
+		var target string
+
+		switch {
+		case len(s) == 1:
+			target = s[0]
+		case len(c) == 1:
+			target = c[0]
+		case len(f) == 1:
+			target = f[0]
+		}
+
+		if len(target) > 0 {
+			err = execute.ExternalProgram("dotnet", "build", target)
+		} else {
+			err = errors.New("no dotnet project file was found")
 		}
 	case "go":
 		if filesystem.FileExists("go.mod") {

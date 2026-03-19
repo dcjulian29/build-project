@@ -18,6 +18,7 @@ limitations under the License.
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/dcjulian29/go-toolbox/color"
 	"github.com/dcjulian29/go-toolbox/filesystem"
@@ -47,6 +48,21 @@ func DetectAction() string {
 
 	if filesystem.FileExists(".goreleaser.yml") || filesystem.FileExists(".goreleaser.yaml") {
 		action = "goreleaser"
+	}
+
+	matches, _ := filepath.Glob("*.csproj")
+	if len(matches) > 0 {
+		action = "dotnet"
+	}
+
+	matches, _ = filepath.Glob("*.fsproj")
+	if len(matches) > 0 {
+		action = "dotnet"
+	}
+
+	matches, _ = filepath.Glob("*.sln")
+	if len(matches) > 0 {
+		action = "dotnet"
 	}
 
 	if filesystem.FileExists("build.cake") {
