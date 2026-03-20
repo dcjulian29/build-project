@@ -178,11 +178,15 @@ func PerformAction(action string) error {
 			err = execute.ExternalProgram("go", "mod", "tidy")
 
 			if err == nil {
-				err = execute.ExternalProgram("go", "vet")
+				err = execute.ExternalProgram("go", "vet", "./...")
 			}
 
 			if err == nil {
-				err = execute.ExternalProgram("go", "build", "-a", "-v", ".")
+				err = execute.ExternalProgram("go", "build", "-a", "-v", "./...")
+			}
+
+			if err == nil {
+				err = execute.ExternalProgram("go", "test", "-v", "./...")
 			}
 		} else {
 			err = errors.New("go.mod file does not exists")
