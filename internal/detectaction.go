@@ -42,6 +42,10 @@ func DetectAction() string {
 		action = "docker"
 	}
 
+	if filesystem.FileExists("hugo.toml") {
+		action = "hugo"
+	}
+
 	if filesystem.FileExists("go.mod") {
 		action = "go"
 	}

@@ -42,6 +42,7 @@ import (
 //   - "dotnet"     - runs dotnet build to compile
 //   - "go"         – runs go mod tidy, go vet, and go build (requires go.mod)
 //   - "goreleaser" – runs goreleaser release --snapshot --clean
+//   - "hugo"       - runs "hugo build" (requires a hugo.toml file)
 //   - "powershell" – executes build.ps1 using Windows PowerShell (Windows only)
 //   - "pwsh"       – executes build.ps1 using PowerShell Core (cross-platform)
 //   - "sh"         – executes build.sh using sh (Linux/macOS only)
@@ -207,6 +208,13 @@ func PerformAction(action string) error {
 		}
 
 		return errors.New(".goreleaser.yml file does not exists")
+
+	case "hugo":
+		if filesystem.FileExists("hugo.toml") {
+			return execute.ExternalProgram("hugo", "build")
+		}
+
+		return errors.New("hugo.toml file does not exist")
 
 	case "powershell":
 		if filesystem.FileExists("build.ps1") {
