@@ -49,8 +49,9 @@ chocolateys:
     bug_tracker_url: https://github.com/dcjulian29/build-project/issues
     description: |
       build-project is a tool to abstract building a project from the specific implementation.
-    skip_publish: true
-
+    api_key: "{{ .Env.CHOCO_API_KEY}}"
+    source_repo: "https://www.myget.org/F/dcjulian29-chocolatey/"
+    skip_publish: false
 checksum:
   name_template: 'checksums.txt'
 
