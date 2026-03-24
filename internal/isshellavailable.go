@@ -1,5 +1,3 @@
-package internal
-
 /*
 Copyright © 2026 Julian Easterling
 
@@ -16,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package internal
+
 import (
 	"os/exec"
 )
@@ -29,11 +29,11 @@ func IsShellAvailable(shell string) bool {
 	var cmd *exec.Cmd
 
 	switch shell {
-	case "bash", "sh", "pwsh":
+	case "bash", "sh":
 		cmd = exec.Command(shell, "-c", "exit 0")
 	case "cmd":
 		cmd = exec.Command(shell, "/C", "exit 0")
-	case "powershell":
+	case "powershell", "pwsh":
 		cmd = exec.Command(shell, "-Command", "exit 0")
 	default:
 		return false

@@ -1,5 +1,3 @@
-package internal
-
 /*
 Copyright © 2026 Julian Easterling
 
@@ -16,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package internal
+
 import (
 	"errors"
 	"fmt"
@@ -24,9 +24,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/dcjulian29/go-toolbox/color"
 	"github.com/dcjulian29/go-toolbox/execute"
 	"github.com/dcjulian29/go-toolbox/filesystem"
+	"github.com/dcjulian29/go-toolbox/textformat"
 )
 
 // PerformAction executes the build action identified by the action string. It
@@ -49,16 +49,14 @@ import (
 // Returns an error if the action fails, or an error indicating that nothing
 // was found to build or that the build system is unknown.
 func PerformAction(action string) error {
-
-	var err error = nil
-
 	switch action {
 	case "ansible":
 		if filesystem.FileExists("ansible.cfg") {
-			err = execute.ExternalProgram("ansible-lint", ".")
-		} else {
-			err = errors.New("ansible.cfg file does not exists")
+			return execute.ExternalProgram("ansible-lint", ".")
 		}
+
+		return errors.New("ansible.cfg file does not exists")
+
 	case "archive":
 		pwd, _ := os.Getwd()
 		name := filepath.Base(pwd)
@@ -67,31 +65,34 @@ func PerformAction(action string) error {
 
 		fmt.Printf("Archiving '%s'...\n", pwd)
 
-		err = execute.ExternalProgram("7z", "a", "-t7z", "-mx9", "-y", "-r", dst, ".")
+		return execute.ExternalProgram("7z", "a", "-t7z", "-mx9", "-y", "-r", dst, ".")
+
 	case "bash":
 		if runtime.GOOS != "windows" {
 			if filesystem.FileExists("build.sh") {
-				err = execute.ExternalProgram("bash", "build.sh")
-			} else {
-				err = errors.New("build.sh file does not exists")
+				return execute.ExternalProgram("bash", "build.sh")
 			}
-		} else {
-			err = errors.New("this type of build system requires Linux or MacOS")
+
+			return errors.New("build.sh file does not exists")
 		}
+
+		return errors.New("this type of build system requires Linux or MacOS")
+
 	case "bat":
 		if runtime.GOOS == "windows" {
 			if filesystem.FileExists("build.bat") {
-				err = execute.ExternalProgram("cmd.exe", "/C", "build.bat")
-			} else {
-				err = errors.New("build.bat file does not exists")
+				return execute.ExternalProgram("cmd.exe", "/C", "build.bat")
 			}
-		} else {
-			err = errors.New("this type of build system requires Windows")
+
+			return errors.New("build.bat file does not exists")
 		}
+
+		return errors.New("this type of build system requires Windows")
+
 	case "cake":
 		tools, err := execute.ExternalProgramCapture("dotnet", "tool", "list")
 		if err != nil {
-			err = errors.New("dotnet SDK is not present")
+			return errors.New("dotnet SDK is not present")
 		}
 
 		if !strings.Contains(tools, "cake.tool") {
@@ -100,11 +101,11 @@ func PerformAction(action string) error {
 			}
 
 			if err == nil {
-				fmt.Println(color.Info("Installing Cake.Tool"))
+				fmt.Println(textformat.Info("Installing Cake.Tool"))
 				err = execute.ExternalProgram("dotnet", "tool", "install", "Cake.Tool")
 
 				if err != nil {
-					err = errors.New("Cake.Tool is not present and could not be installed")
+					return errors.New("Cake.Tool is not present and could not be installed")
 				}
 			}
 		}
@@ -119,35 +120,40 @@ func PerformAction(action string) error {
 			}
 
 			msg := fmt.Sprintf("Using target '%s'", strings.Split(arguments[len(arguments)-1], "=")[1])
-			fmt.Println(color.Info(msg))
+			fmt.Println(textformat.Info(msg))
 		}
 
 		err = execute.ExternalProgram("dotnet", arguments...)
 
 		if err != nil && strings.Contains(err.Error(), "Could not execute because the specified command or file was not found") {
-			err = execute.ExternalProgram("dotnet", "tool", "restore")
-			if err != nil {
-				err = errors.New("Cake.Tool is not present and could not be restored")
-			} else {
-				err = execute.ExternalProgram("dotnet", arguments...)
+			if err := execute.ExternalProgram("dotnet", "tool", "restore"); err != nil {
+				return errors.New("Cake.Tool is not present and could not be restored")
 			}
+
+			return execute.ExternalProgram("dotnet", arguments...)
+
 		}
+
+		return nil
+
 	case "cmd":
 		if runtime.GOOS == "windows" {
 			if filesystem.FileExists("build.cmd") {
-				err = execute.ExternalProgram("cmd.exe", "/C", "build.cmd")
-			} else {
-				err = errors.New("build.cmd file does not exists")
+				return execute.ExternalProgram("cmd.exe", "/C", "build.cmd")
 			}
-		} else {
-			err = errors.New("this type of build system requires Windows")
+
+			return errors.New("build.cmd file does not exists")
 		}
+
+		return errors.New("this type of build system requires Windows")
+
 	case "docker":
 		if filesystem.FileExists("dockerfile") {
-			err = execute.ExternalProgram("docker", "build", ".")
-		} else {
-			err = errors.New("dockerfile file does not exist")
+			return execute.ExternalProgram("docker", "build", ".")
 		}
+
+		return errors.New("dockerfile file does not exist")
+
 	case "dotnet":
 		if !IsShellAvailable("dotnet") {
 			return errors.New("dotnet CLI is not available; install the .NET SDK from https://dot.net")
@@ -169,65 +175,72 @@ func PerformAction(action string) error {
 		}
 
 		if len(target) > 0 {
-			err = execute.ExternalProgram("dotnet", "build", target)
-		} else {
-			err = errors.New("no dotnet project file was found")
+			return execute.ExternalProgram("dotnet", "build", target)
 		}
+
+		return errors.New("no dotnet project file was found")
+
 	case "go":
 		if filesystem.FileExists("go.mod") {
-			err = execute.ExternalProgram("go", "mod", "tidy")
-
-			if err == nil {
-				err = execute.ExternalProgram("go", "vet", "./...")
+			if err := execute.ExternalProgram("go", "mod", "tidy"); err != nil {
+				return err
 			}
 
-			if err == nil {
-				err = execute.ExternalProgram("go", "build", "-a", "-v", "./...")
+			if err := execute.ExternalProgram("go", "vet", "./..."); err != nil {
+				return err
 			}
 
-			if err == nil {
-				err = execute.ExternalProgram("go", "test", "-v", "./...")
+			if err := execute.ExternalProgram("go", "build", "-a", "-v", "./..."); err != nil {
+				return err
 			}
-		} else {
-			err = errors.New("go.mod file does not exists")
+
+			if err := execute.ExternalProgram("go", "test", "-v", "./..."); err != nil {
+				return err
+			}
 		}
+
+		return errors.New("go.mod file does not exists")
+
 	case "goreleaser":
 		if filesystem.FileExists(".goreleaser.yml") || filesystem.FileExists(".goreleaser.yaml") {
-			err = execute.ExternalProgram("goreleaser", "release", "--snapshot", "--clean")
-		} else {
-			err = errors.New(".goreleaser.yml file does not exists")
+			return execute.ExternalProgram("goreleaser", "release", "--snapshot", "--clean")
 		}
+
+		return errors.New(".goreleaser.yml file does not exists")
+
 	case "powershell":
 		if filesystem.FileExists("build.ps1") {
 			if runtime.GOOS == "windows" {
-				err = execute.ExternalProgram("powershell", "-f", "build.ps1")
-			} else {
-				err = errors.New("this type of build system requires Windows")
+				return execute.ExternalProgram("powershell", "-f", "build.ps1")
 			}
-		} else {
-			err = errors.New("build.ps1 file does not exists")
+
+			return errors.New("this type of build system requires Windows")
 		}
+
+		return errors.New("build.ps1 file does not exists")
+
 	case "pwsh":
 		if filesystem.FileExists("build.ps1") {
-			err = execute.ExternalProgram("pwsh", "-f", "build.ps1")
-		} else {
-			err = errors.New("build.ps1 file does not exists")
+			return execute.ExternalProgram("pwsh", "-f", "build.ps1")
 		}
+
+		return errors.New("build.ps1 file does not exists")
+
 	case "sh":
 		if runtime.GOOS != "windows" {
 			if filesystem.FileExists("build.sh") {
-				err = execute.ExternalProgram("sh", "build.sh")
-			} else {
-				err = errors.New("build.sh file does not exists")
+				return execute.ExternalProgram("sh", "build.sh")
 			}
-		} else {
-			err = errors.New("this type of build system requires Linux or MacOS")
-		}
-	case "":
-		err = errors.New("nothing found to build in this directory")
-	default:
-		err = errors.New("unknown build system specified")
-	}
 
-	return err
+			return errors.New("build.sh file does not exists")
+		}
+
+		return errors.New("this type of build system requires Linux or MacOS")
+
+	case "":
+		return errors.New("nothing found to build in this directory")
+
+	default:
+		return errors.New("unknown build system specified")
+	}
 }

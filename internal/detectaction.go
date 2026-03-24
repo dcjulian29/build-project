@@ -1,5 +1,3 @@
-package internal
-
 /*
 Copyright © 2026 Julian Easterling
 
@@ -16,12 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package internal
+
 import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/dcjulian29/go-toolbox/color"
 	"github.com/dcjulian29/go-toolbox/filesystem"
+	"github.com/dcjulian29/go-toolbox/textformat"
 )
 
 // DetectAction inspects well-known build system indicator files in the current
@@ -30,7 +30,7 @@ import (
 // refine the action based on available shell scripts and the
 // current operating system.
 func DetectAction() string {
-	fmt.Println(color.Info("Detecting build system..."))
+	fmt.Println(textformat.Info("Detecting build system..."))
 
 	var action string
 

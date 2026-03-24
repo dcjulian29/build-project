@@ -1,7 +1,3 @@
-// Command build-project is a universal build dispatcher that auto-detects the
-// build system in use and invokes the appropriate tool or script to build the project.
-package main
-
 /*
 Copyright © 2026 Julian Easterling
 
@@ -18,15 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// build-project is a command-line tool that automatically detects and executes
+// the appropriate build system for the project in the current working directory.
+// It looks for well-known files (e.g., go.mod, dockerfile, *.sln, ansible.cfg,
+// .goreleaser.yml) and build scripts (e.g., build.sh, build.ps1, build.bat)
+// to determine the correct build action, then runs the corresponding toolchain.
+package main
+
 import (
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/dcjulian29/build-project/internal"
-	"github.com/dcjulian29/go-toolbox/color"
+	"github.com/dcjulian29/go-toolbox/textformat"
 )
 
+// main is the entry point for the build-project CLI. It parses command-line
+// flags, detects the appropriate build action for the current directory,
+// and delegates execution to the internal package.
 func main() {
 	var action string
 
@@ -42,7 +48,7 @@ func main() {
 	}
 
 	if err := internal.PerformAction(action); err != nil {
-		fmt.Println(color.Red(err.Error()))
+		fmt.Println(textformat.Red(err.Error()))
 		os.Exit(1)
 	}
 }
