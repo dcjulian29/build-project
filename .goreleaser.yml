@@ -1,9 +1,10 @@
-project_name: build-project
+---
 version: 2
 before:
   hooks:
     - go mod tidy
     - go mod verify
+    - go vet
 builds:
   - env:
       - CGO_ENABLED=0
@@ -15,7 +16,9 @@ builds:
       - amd64
 
 archives:
-  - builds_info:
+  - files:
+      - LICENSE
+    builds_info:
       group: root
       owner: root
       mode: 0755
@@ -26,7 +29,7 @@ archives:
 
 nfpms:
   - package_name: dcjulian29.apps.build-project
-    homepage: https://github.com/dcjulian29/cli-tools/build-project/
+    homepage: https://github.com/dcjulian29/build-project/
     maintainer: Julian Easterling <julian@julianscorner.com>
     license: Apache 2.0
     description: |-
@@ -39,11 +42,11 @@ nfpms:
 chocolateys:
   - name: dcjulian29.apps.build-project
     authors: Julian Easterling <julian@julianscorner.com>
-    project_url: https://github.com/dcjulian29/cli-tools/build-project/
+    project_url: https://github.com/dcjulian29/build-project/
     copyright: 2023 Julian Easterling julian@julianscorner.com
-    license_url: https://github.com/dcjulian29/cli-tools/blob/main/LICENSE
+    license_url: https://github.com/dcjulian29/build-project/blob/main/LICENSE
     require_license_acceptance: false
-    bug_tracker_url: https://github.com/dcjulian29/cli-tools/issues
+    bug_tracker_url: https://github.com/dcjulian29/build-project/issues
     description: |
       build-project is a tool to abstract building a project from the specific implementation.
     skip_publish: true
