@@ -31,28 +31,28 @@ import (
 func DetectBuildScript(action string) string {
 	switch runtime.GOOS {
 	case "windows":
-		if filesystem.FileExists("build.bat") && IsShellAvailable("cmd") {
+		if filesystem.FileExist("build.bat") && IsShellAvailable("cmd") {
 			action = "bat"
 		}
 
-		if filesystem.FileExists("build.cmd") && IsShellAvailable("cmd") {
+		if filesystem.FileExist("build.cmd") && IsShellAvailable("cmd") {
 			action = "cmd"
 		}
 
-		if filesystem.FileExists("build.ps1") && IsShellAvailable("powershell") {
+		if filesystem.FileExist("build.ps1") && IsShellAvailable("powershell") {
 			action = "powershell"
 		}
 	case "linux", "darwin":
-		if filesystem.FileExists("build.sh") && IsShellAvailable("sh") {
+		if filesystem.FileExist("build.sh") && IsShellAvailable("sh") {
 			action = "sh"
 		}
 
-		if filesystem.FileExists("build.sh") && IsShellAvailable("bash") {
+		if filesystem.FileExist("build.sh") && IsShellAvailable("bash") {
 			action = "bash"
 		}
 	}
 
-	if filesystem.FileExists("build.ps1") && IsShellAvailable("pwsh") {
+	if filesystem.FileExist("build.ps1") && IsShellAvailable("pwsh") {
 		action = "pwsh"
 	}
 

@@ -52,7 +52,7 @@ import (
 func PerformAction(action string) error {
 	switch action {
 	case "ansible":
-		if filesystem.FileExists("ansible.cfg") {
+		if filesystem.FileExist("ansible.cfg") {
 			return execute.ExternalProgram("ansible-lint", ".")
 		}
 
@@ -70,7 +70,7 @@ func PerformAction(action string) error {
 
 	case "bash":
 		if runtime.GOOS != "windows" {
-			if filesystem.FileExists("build.sh") {
+			if filesystem.FileExist("build.sh") {
 				return execute.ExternalProgram("bash", "build.sh")
 			}
 
@@ -81,7 +81,7 @@ func PerformAction(action string) error {
 
 	case "bat":
 		if runtime.GOOS == "windows" {
-			if filesystem.FileExists("build.bat") {
+			if filesystem.FileExist("build.bat") {
 				return execute.ExternalProgram("cmd.exe", "/C", "build.bat")
 			}
 
@@ -97,7 +97,7 @@ func PerformAction(action string) error {
 		}
 
 		if !strings.Contains(tools, "cake.tool") {
-			if !filesystem.FileExists("dotnet-tools.json") {
+			if !filesystem.FileExist("dotnet-tools.json") {
 				err = execute.ExternalProgram("dotnet", "new", "tool-manifest")
 			}
 
@@ -139,7 +139,7 @@ func PerformAction(action string) error {
 
 	case "cmd":
 		if runtime.GOOS == "windows" {
-			if filesystem.FileExists("build.cmd") {
+			if filesystem.FileExist("build.cmd") {
 				return execute.ExternalProgram("cmd.exe", "/C", "build.cmd")
 			}
 
@@ -149,7 +149,7 @@ func PerformAction(action string) error {
 		return errors.New("this type of build system requires Windows")
 
 	case "docker":
-		if filesystem.FileExists("dockerfile") {
+		if filesystem.FileExist("dockerfile") {
 			return execute.ExternalProgram("docker", "build", ".")
 		}
 
@@ -182,7 +182,7 @@ func PerformAction(action string) error {
 		return errors.New("no dotnet project file was found")
 
 	case "go":
-		if filesystem.FileExists("go.mod") {
+		if filesystem.FileExist("go.mod") {
 			if err := execute.ExternalProgram("go", "mod", "tidy"); err != nil {
 				return err
 			}
@@ -203,21 +203,21 @@ func PerformAction(action string) error {
 		return errors.New("go.mod file does not exists")
 
 	case "goreleaser":
-		if filesystem.FileExists(".goreleaser.yml") || filesystem.FileExists(".goreleaser.yaml") {
+		if filesystem.FileExist(".goreleaser.yml") || filesystem.FileExist(".goreleaser.yaml") {
 			return execute.ExternalProgram("goreleaser", "release", "--snapshot", "--clean")
 		}
 
 		return errors.New(".goreleaser.yml file does not exists")
 
 	case "hugo":
-		if filesystem.FileExists("hugo.toml") {
+		if filesystem.FileExist("hugo.toml") {
 			return execute.ExternalProgram("hugo", "build")
 		}
 
 		return errors.New("hugo.toml file does not exist")
 
 	case "powershell":
-		if filesystem.FileExists("build.ps1") {
+		if filesystem.FileExist("build.ps1") {
 			if runtime.GOOS == "windows" {
 				return execute.ExternalProgram("powershell", "-f", "build.ps1")
 			}
@@ -228,7 +228,7 @@ func PerformAction(action string) error {
 		return errors.New("build.ps1 file does not exists")
 
 	case "pwsh":
-		if filesystem.FileExists("build.ps1") {
+		if filesystem.FileExist("build.ps1") {
 			return execute.ExternalProgram("pwsh", "-f", "build.ps1")
 		}
 
@@ -236,7 +236,7 @@ func PerformAction(action string) error {
 
 	case "sh":
 		if runtime.GOOS != "windows" {
-			if filesystem.FileExists("build.sh") {
+			if filesystem.FileExist("build.sh") {
 				return execute.ExternalProgram("sh", "build.sh")
 			}
 
