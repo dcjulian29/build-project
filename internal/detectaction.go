@@ -34,23 +34,23 @@ func DetectAction() string {
 
 	var action string
 
-	if filesystem.FileExists("ansible.cfg") {
+	if filesystem.FileExist("ansible.cfg") {
 		action = "ansible"
 	}
 
-	if filesystem.FileExists("dockerfile") {
+	if filesystem.FileExist("dockerfile") {
 		action = "docker"
 	}
 
-	if filesystem.FileExists("hugo.toml") {
+	if filesystem.FileExist("hugo.toml") {
 		action = "hugo"
 	}
 
-	if filesystem.FileExists("go.mod") {
+	if filesystem.FileExist("go.mod") {
 		action = "go"
 	}
 
-	if filesystem.FileExists(".goreleaser.yml") || filesystem.FileExists(".goreleaser.yaml") {
+	if filesystem.FileExist(".goreleaser.yml") || filesystem.FileExist(".goreleaser.yaml") {
 		action = "goreleaser"
 	}
 
@@ -69,7 +69,7 @@ func DetectAction() string {
 		action = "dotnet"
 	}
 
-	if filesystem.FileExists("build.cake") {
+	if filesystem.FileExist("build.cake") {
 		action = "cake"
 	}
 
