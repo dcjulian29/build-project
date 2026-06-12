@@ -30,7 +30,7 @@ archives:
 nfpms:
   - package_name: dcjulian29.apps.build-project
     homepage: https://github.com/dcjulian29/build-project/
-    maintainer: Julian Easterling <julian@julianscorner.com>
+    maintainer: Julian Easterling
     license: Apache 2.0
     description: |-
       build-project is a tool to abstract building a project from the specific implementation.
@@ -41,9 +41,9 @@ nfpms:
 
 chocolateys:
   - name: dcjulian29.apps.build-project
-    authors: Julian Easterling <julian@julianscorner.com>
+    authors: Julian Easterling
     project_url: https://github.com/dcjulian29/build-project/
-    copyright: 2023 Julian Easterling julian@julianscorner.com
+    copyright: 2026 Julian Easterling
     license_url: https://github.com/dcjulian29/build-project/blob/main/LICENSE
     require_license_acceptance: false
     bug_tracker_url: https://github.com/dcjulian29/build-project/issues
